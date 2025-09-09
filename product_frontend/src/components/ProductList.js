@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import ProductCard from "./ProductCard";
+import ProductForm from "./ProductForm";
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -32,13 +34,16 @@ function ProductList() {
     setErrors({ ...errors, [e.target.name]: "" }); // clear error on change
   };
 
-  // Form validation function
+  // Validation
   const validateForm = () => {
     let tempErrors = {};
-    if (!formData.name || formData.name.length < 3) tempErrors.name = "Name must be at least 3 characters";
-    if (!formData.price || formData.price <= 0) tempErrors.price = "Price must be a positive number";
+    if (!formData.name || formData.name.length < 3)
+      tempErrors.name = "Name must be at least 3 characters";
+    if (!formData.price || formData.price <= 0)
+      tempErrors.price = "Price must be a positive number";
     if (!formData.category) tempErrors.category = "Category is required";
-    if (formData.description.length > 200) tempErrors.description = "Description cannot exceed 200 characters";
+    if (formData.description.length > 200)
+      tempErrors.description = "Description cannot exceed 200 characters";
 
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
@@ -46,11 +51,14 @@ function ProductList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return; // stop if validation fails
+    if (!validateForm()) return;
 
     try {
       if (editProductId) {
-        await axios.put(`http://localhost:5000/api/products/${editProductId}`, formData);
+        await axios.put(
+          `http://localhost:5000/api/products/${editProductId}`,
+          formData
+        );
       } else {
         await axios.post("http://localhost:5000/api/products", formData);
       }
@@ -85,7 +93,6 @@ function ProductList() {
     setShowForm(true);
   };
 
-  // Filter products by name or price
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -93,12 +100,35 @@ function ProductList() {
   );
 
   return (
-    <div style={{ padding: "30px", fontFamily: "Arial, sans-serif",backgroundColor: "#F7DFC2", minHeight: "100vh" }}>
-      <h2 style={{ textAlign: "center", fontSize: "28px", fontWeight: "bold", marginBottom: "25px" }}>
+    <div
+      style={{
+        padding: "30px",
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "#F7DFC2",
+        minHeight: "100vh",
+      }}
+    >
+      <h2
+        style={{
+          textAlign: "center",
+          fontSize: "28px",
+          fontWeight: "bold",
+          marginBottom: "25px",
+        }}
+      >
         Product Details
       </h2>
 
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "15px", marginBottom: "30px" }}>
+      {/* Search + Add button */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "15px",
+          marginBottom: "30px",
+        }}
+      >
         <input
           type="text"
           placeholder="Search by name or price..."
@@ -146,59 +176,12 @@ function ProductList() {
           }}
         >
           {filteredProducts.map((product) => (
-            <div
+            <ProductCard
               key={product._id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: "10px",
-                padding: "16px",
-                background: "white",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
-                height: "230px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div>
-                <h3 style={{ fontSize: "18px", fontWeight: "600", marginBottom: "4px" }}>{product.name}</h3>
-                <p style={{ fontSize: "14px", color: "#333", margin: "4px 0" }}>₹{product.price}</p>
-                <p style={{ fontSize: "13px", color: "#666", margin: "4px 0" }}>{product.category}</p>
-                <p style={{ fontSize: "12px", color: "#999", marginTop: "6px" }}>
-                  {product.description.length > 50 ? product.description.slice(0, 50) + "..." : product.description}
-                </p>
-              </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: "8px" }}>
-                <button
-                  style={{
-                    background: "#007bff",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                    padding: "6px 10px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleEdit(product)}
-                >
-                  Edit
-                </button>
-                <button
-                  style={{
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "5px",
-                    padding: "6px 10px",
-                    fontSize: "12px",
-                    cursor: "pointer",
-                  }}
-                  onClick={() => handleDelete(product._id)}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+              product={product}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       )}
@@ -218,98 +201,18 @@ function ProductList() {
             alignItems: "center",
           }}
         >
-          <form
+          <ProductForm
+            formData={formData}
+            errors={errors}
+            onChange={handleChange}
             onSubmit={handleSubmit}
-            style={{
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              width: "350px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-              display: "flex",
-              flexDirection: "column",
+            onCancel={() => {
+              setShowForm(false);
+              setEditProductId(null);
+              setErrors({});
             }}
-          >
-            <h3 style={{ marginBottom: "15px", textAlign: "center" }}>
-              {editProductId ? "Edit Product" : "Add New Product"}
-            </h3>
-
-            <input
-              type="text"
-              name="name"
-              placeholder="Name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              style={{ padding: "8px", marginBottom: "5px", borderRadius: "6px", border: "1px solid #ccc" }}
-            />
-            {errors.name && <span style={{ color: "red", fontSize: "12px" }}>{errors.name}</span>}
-
-            <input
-              type="number"
-              name="price"
-              placeholder="Price"
-              value={formData.price}
-              onChange={handleChange}
-              required
-              style={{ padding: "8px", marginBottom: "5px", borderRadius: "6px", border: "1px solid #ccc" }}
-            />
-            {errors.price && <span style={{ color: "red", fontSize: "12px" }}>{errors.price}</span>}
-
-            <input
-              type="text"
-              name="category"
-              placeholder="Category"
-              value={formData.category}
-              onChange={handleChange}
-              style={{ padding: "8px", marginBottom: "5px", borderRadius: "6px", border: "1px solid #ccc" }}
-            />
-            {errors.category && <span style={{ color: "red", fontSize: "12px" }}>{errors.category}</span>}
-
-            <textarea
-              name="description"
-              placeholder="Description"
-              value={formData.description}
-              onChange={handleChange}
-              rows="3"
-              style={{ padding: "8px", marginBottom: "5px", borderRadius: "6px", border: "1px solid #ccc" }}
-            />
-            {errors.description && <span style={{ color: "red", fontSize: "12px" }}>{errors.description}</span>}
-
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditProductId(null);
-                  setErrors({});
-                }}
-                style={{
-                  background: "#6c757d",
-                  color: "white",
-                  padding: "8px 14px",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                style={{
-                  background: "#28a745",
-                  color: "white",
-                  padding: "8px 14px",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                }}
-              >
-                Save
-              </button>
-            </div>
-          </form>
+            isEditing={!!editProductId}
+          />
         </div>
       )}
     </div>
